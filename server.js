@@ -6,10 +6,11 @@ app.use(express.json({ limit: "20kb" }));
 // --- tiny JSON-file store (swap for Postgres later) ---
 const FILE = process.env.DATA_FILE || path.join(__dirname, "data.json");
 let DB = { owners: {}, rooms: {} };
-try { DB = JSON.parse(fs.readFileSync(FILE, "utf8")); } catch (e) {}
+try { DB = JSON.parse(fs.readFileSync(FILE, "utf8")); }
+catch (e) { if (e.code !== "ENOENT") { try { fs.renameSync(FILE, FILE + ".corrupt-" + Date.now()); } catch (x) {} console.error("data file unreadable, kept a copy and started fresh"); } }
 let dirty = false;
 const save = () => { dirty = true; };
-setInterval(() => { if (dirty) { dirty = false; fs.writeFile(FILE, JSON.stringify(DB), () => {}); } }, 2000);
+setInterval(() => { if (dirty) { dirty = false; fs.writeFile(FILE + ".tmp", JSON.stringify(DB), err => { if (!err) fs.rename(FILE + ".tmp", FILE, () => {}); }); } }, 2000);
 
 const rnd = n => crypto.randomBytes(n).toString("hex");
 const sha = s => crypto.createHash("sha256").update(String(s)).digest("hex");
@@ -23,14 +24,26 @@ function limit(key, max, ms) {
   return true;
 }
 const fail = (res, code, msg) => res.status(code).json({ error: msg });
+const MAIL_KEY = process.env.RESEND_API_KEY, MAIL_URL = process.env.MAIL_URL || "https://api.resend.com/emails";
+const MAIL_FROM = process.env.MAIL_FROM || "TagBack <onboarding@resend.dev>";
+const RESP = (process.env.RESPONDER_EMAILS || "").split(",").map(s => s.trim()).filter(Boolean);
+async function mail(to, subject, text) {
+  const list = [].concat(to).filter(Boolean); if (!MAIL_KEY || !list.length) return false;
+  try {
+    const r = await fetch(MAIL_URL, { method: "POST", headers: { Authorization: "Bearer " + MAIL_KEY, "content-type": "application/json" },
+      body: JSON.stringify({ from: MAIL_FROM, to: list, subject, text }) });
+    if (!r.ok) console.error("mail http", r.status); return r.ok;
+  } catch (e) { console.error("mail error", e.name); return false; }
+}
+function notifyOwner(o, text) { if (o.email && limit("mail" + o.id, 6, 3600e3)) mail(o.email, "TagBack: " + text.slice(0, 60), text + "\n\nOpen TagBack to reply."); }
 const view = r => ({ id: r.id, item: r.item, fname: r.fname, desc: r.desc, loc: r.loc, status: r.status, msgs: r.msgs });
-const note = (o, text) => { o.notes.unshift({ id: rnd(4), text, t: Date.now(), read: false }); o.notes = o.notes.slice(0, 100); };
+const note = (o, text) => { o.notes.unshift({ id: rnd(4), text, t: Date.now(), read: false }); o.notes = o.notes.slice(0, 100); notifyOwner(o, text); };
 const LIMIT_PRE = 3, MAX_LEN = 500;
 
 // --- auth helpers ---
 const needOwner = (req, res, next) => {
   const h = sha(req.get("x-owner") || "none");
-  const o = Object.values(DB.owners).find(x => x.tokenHash === h);
+  const o = Object.values(DB.owners).find(x => x.tokenHash === h || (x.more || []).includes(h));
   if (!o) return fail(res, 401, "Please sign in again.");
   req.o = o; next();
 };
@@ -44,12 +57,21 @@ app.post("/api/register", (req, res) => {
   if (!limit("reg" + req.ip, 10, 3600e3)) return fail(res, 429, "Too many sign-ups. Try later.");
   const name = clip(req.body.name, 40);
   if (!name) return fail(res, 400, "Enter your name.");
-  const token = rnd(24), id = rnd(6);
-  DB.owners[id] = { id, name, email: clip(req.body.email, 120), tokenHash: sha(token), qrId: rnd(10), qrActive: true,
-    pub: { name, note: "", ver: "blue-heron-42" }, notes: [], blocked: [] };
+  const token = rnd(24), id = rnd(6), rec = rnd(8), email = /^\S+@\S+\.\S+$/.test(clip(req.body.email, 120)) ? clip(req.body.email, 120) : "";
+  DB.owners[id] = { id, name, email, tokenHash: sha(token), qrId: rnd(10), qrActive: true,
+    pub: { name, note: "", ver: "blue-heron-42" }, notes: [], blocked: [], recHash: sha(rec), more: [] };
   save();
+  res.json({ ownerToken: token, recovery: rec });
+});
+app.post("/api/login", (req, res) => {
+  if (!limit("login" + req.ip, 10, 3600e3)) return fail(res, 429, "Too many attempts. Try later.");
+  const h = sha(clip(req.body.recovery, 40).toLowerCase());
+  const o = Object.values(DB.owners).find(x => x.recHash === h);
+  if (!o) return fail(res, 401, "That recovery key isn't valid.");
+  const token = rnd(24); o.more = (o.more || []).concat(sha(token)).slice(-5); save();
   res.json({ ownerToken: token });
 });
+app.post("/api/me/recovery", needOwner, (req, res) => { const rec = rnd(8); req.o.recHash = sha(rec); save(); res.json({ recovery: rec }); });
 app.get("/api/me", needOwner, (req, res) => {
   const o = req.o;
   res.json({ owner: { name: o.name, qrId: o.qrId, qrActive: o.qrActive, pub: o.pub },
@@ -129,9 +151,12 @@ DB.places = DB.places || { station: { id: "station", name: "Station Auto Stand",
 DB.pings = DB.pings || [];
 DB.settings = DB.settings || { ai: true };
 DB.rides = DB.rides || [{ id: "r1", place: "station", by: "Traveler-27", from: "Station", to: "Model Town", time: "6:30 PM", fare: 120, driver: null, joined: [] }];
-const KEY = process.env.PLACE_KEY || "demo1234";
-const needKey = (req, res, next) => req.get("x-key") === KEY ? next() : fail(res, 401, "Wrong responder key.");
-const pubPing = p => ({ id: p.id, cat: p.cat, urg: p.urg, to: p.to, replies: p.replies, status: p.status });
+if (!process.env.PLACE_KEY && !DB.settings.key) { DB.settings.key = rnd(6); save(); }
+const KEY = process.env.PLACE_KEY || DB.settings.key;
+if (!process.env.PLACE_KEY) console.log("Responder key (set PLACE_KEY to choose your own): " + KEY);
+const safeEq = (a, b) => crypto.timingSafeEqual(crypto.createHash("sha256").update(String(a)).digest(), crypto.createHash("sha256").update(String(b)).digest());
+const needKey = (req, res, next) => safeEq(req.get("x-key") || "", KEY) ? next() : fail(res, 401, "Wrong responder key.");
+const pubPing = p => ({ id: p.id, cat: p.cat, urg: p.urg, to: p.to, replies: p.replies, status: p.status, alerted: !!p.alerted });
 const placeOf = (req, res) => { const p = DB.places[String(req.params.id).toLowerCase()]; if (!p) fail(res, 404, "Unknown place."); return p; };
 
 function heuristic(t) {
@@ -228,6 +253,7 @@ app.post("/api/place/:id/ping", (req, res) => {
   const p = { id, place: pl.id, cat, urg: emg ? "emergency" : (a && ["low", "medium", "high", "emergency"].includes(a.urgency) ? (a.urgency === "emergency" ? "high" : a.urgency) : "low"), to: ROUTE[cat], orig: text,
     polite: emg ? "EMERGENCY: " + text : (sameCat && a.polite) || `A visitor at ${pl.name} says: \u201c${text}\u201d. Could you please take a look?`,
     conf: sameCat ? a.confidence : "manual", replies: [], status: "open", rerouted: false, t: Date.now(), ipH };
+  p.alerted = false; if (emg && RESP.length && MAIL_KEY) { p.alerted = true; mail(RESP, "EMERGENCY at " + pl.name, p.polite + "\n\nOpen the responder inbox to reply."); }
   DB.pings.unshift(p); DB.pings = DB.pings.slice(0, 200); save(); res.json(pubPing(p));
 });
 app.get("/api/ping/:id", (req, res) => { const p = DB.pings.find(x => x.id === req.params.id); p ? res.json(pubPing(p)) : fail(res, 404, "Not found."); });
@@ -291,7 +317,6 @@ app.post("/api/communities/:name/posts", (req, res) => {
   DB.posts.unshift(p); DB.posts = DB.posts.slice(0, 500); save(); res.json({ id: p.id });
 });
 app.get("/api/posts/:id", (req, res) => { const p = DB.posts.find(x => x.id === req.params.id); p ? res.json(p) : fail(res, 404, "Post not found."); });
-
 app.post("/api/posts/:id/comments", (req, res) => {
   const p = DB.posts.find(x => x.id === req.params.id); if (!p) return fail(res, 404, "Post not found.");
   if (!limit("cm" + req.ip, 20, 60e3)) return fail(res, 429, "Slow down a little.");
