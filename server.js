@@ -291,4 +291,14 @@ app.post("/api/communities/:name/posts", (req, res) => {
   DB.posts.unshift(p); DB.posts = DB.posts.slice(0, 500); save(); res.json({ id: p.id });
 });
 app.get("/api/posts/:id", (req, res) => { const p = DB.posts.find(x => x.id === req.params.id); p ? res.json(p) : fail(res, 404, "Post not found."); });
-app.post("/api/posts/:id/comments", (req
+
+app.post("/api/posts/:id/comments", (req, res) => {
+  const p = DB.posts.find(x => x.id === req.params.id); if (!p) return fail(res, 404, "Post not found.");
+  if (!limit("cm" + req.ip, 20, 60e3)) return fail(res, 429, "Slow down a little.");
+  const text = clip(req.body.text, 300); if (!text) return fail(res, 400, "Write a reply first.");
+  p.comments.push({ id: rnd(3), nick: clip(req.body.nick, 20) || "Guest", text, t: Date.now() }); p.comments = p.comments.slice(-200);
+  save(); res.json({ ok: true });
+});
+
+app.use(express.static(path.join(__dirname, "public")));
+app.listen(process.env.PORT || 3000, () => console.log("TagBack running"));
