@@ -104,12 +104,12 @@ function ownerView(){
    '<label for="o-name">Your name</label><input id="o-name" maxlength="40" placeholder="e.g. Aarav S.">'+
    '<label for="o-email">Email (private, used only for alerts)</label><input id="o-email" type="email" placeholder="you@example.com">'+
    '<p class="mute" style="margin-top:12px">Your email stays private and is never shown to finders.</p>'+
-   '<button class="b" data-act="register">Create account and QR</button><div class="err">'+esc(ui.err)+'</div></div>';
+   '<button class="b" data-act="register">Create account and QR</button><div class="err">'+esc(ui.err)+'</div></div><div class="card"><h2>Already have an account?</h2><label for="rk">Recovery key</label><input id="rk" placeholder="Paste your recovery key"><p style="margin-top:12px"><button class="b alt" data-act="signin">Sign in</button></p></div>';
   var unread=S.notes.filter(function(n){return !n.read}).length;
   var pend=S.rooms.filter(function(r){return r.status==="pending"}).length;
   var tabs=[["requests","Requests"+(pend?'<span class="badge">'+pend+'</span>':"")],["active","Active"],["history","Closed & recovered"],["qr","My QR"],["notes","Notifications"+(unread?'<span class="badge">'+unread+'</span>':"")],["settings","Privacy"]];
   var h='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-act="tab" data-v="'+t[0]+'" class="'+(ui.tab===t[0]?"on":"")+'">'+t[1]+'</button>'}).join("")+'</div>';
-  if(ui.tab==="qr")h+=qrTab();else if(ui.tab==="notes")h+=notesTab();else if(ui.tab==="settings")h+=settingsTab();else h+=roomsTab();
+  if(ui.tab==="qr")h+=qrTab()+(ui.rec?recCard():"");else if(ui.tab==="notes")h+=notesTab();else if(ui.tab==="settings")h+=settingsTab();else h+=roomsTab();
   return h;
 }
 function roomsTab(){
@@ -145,7 +145,7 @@ function qrTab(){
 }
 function notesTab(){
   return '<div class="card"><h2>Notifications</h2>'+(S.notes.length?S.notes.map(function(n){return '<div class="item" style="cursor:default"><div class="row" style="justify-content:space-between"><span>'+esc(n.text)+'</span><span class="mute">'+tm(n.t)+'</span></div></div>'}).join(""):'<p class="mute">No notifications yet. They’re created only when a finder submits the contact form, not when the QR is merely scanned.</p>')+
-  '<p class="mute">Email and browser push need a server; they’re the next step beyond this prototype.</p></div>';
+  '<p class="mute">If you gave an email and the server has email set up, new requests and messages are also emailed to you.</p></div>';
 }
 function settingsTab(){
   var p=S.owner.pub;
@@ -153,8 +153,9 @@ function settingsTab(){
   '<label for="p-note">Public note</label><textarea id="p-note" maxlength="200">'+esc(p.note)+'</textarea>'+
   '<label for="p-ver">Verification phrase (shown on your landing page so fake stickers are spotted)</label><input id="p-ver" maxlength="40" value="'+esc(p.ver)+'">'+
   '<p style="margin-top:12px"><button class="b" data-act="savepub">Save</button></p>'+
-  '<p class="mute">Your email and phone are never shown. Blocked finders: '+S.blocked.length+'.</p></div>';
+  '<p class="mute">Your email and phone are never shown. Blocked finders: '+S.blocked.length+'.</p></div>'+recCard();
 }
+function recCard(){return '<div class="card"><h2>Recovery key</h2><p class="mute">Use it to sign in on another phone or after clearing your browser. It is shown once, so save it somewhere safe.</p>'+(ui.rec?'<div class="code">'+esc(ui.rec)+'</div>':'')+'<p style="margin-top:12px"><button class="b alt" data-act="newrec">'+(ui.rec?"Make a new key":"Show a new recovery key")+'</button></p></div>'}
 function finderView(){
   if(ui.kind==="place"&&ui.scanned)return placeView();
   if(!ui.scanned&&ui.fMode==="landing")return scanCard();
@@ -195,8 +196,8 @@ function placeView(){
 }
 function msgPane(){
  var st=ui.pStep||"compose",p=ui.ping;
- if(st==="sent"&&p)return '<div class="card"><h2>✓ Message sent</h2><p class="mute">Sent to the '+esc(p.to.toLowerCase())+'. No names or numbers were shared.</p>'+tags(p.cat,p.urg)+(p.cat==="Emergency"?'<p><strong>Call 112 now.</strong> The owner has been alerted.</p>':"")+(p.replies.length?p.replies.map(function(r){return '<div class="m">'+esc(r)+'</div>'}).join(""):'<p class="mute">Waiting for a reply…</p>')+(p.status==="closed"?'<p class="mute">Chat closed: issue solved.</p>':"")+'<p><button class="b" data-act="pstep" data-v="compose">Send another</button></p></div>'+call112();
- if(st==="suggest"&&ui.sug)return '<div class="card"><h1>Looks like “'+esc(ui.sug.category)+'”. Is that right?</h1><p class="mute">AI only suggests. You decide.</p>'+(ui.sug.followup?'<p>🤔 '+esc(ui.sug.followup)+'</p>':"")+'<button class="b" data-act="psend" data-v="'+esc(ui.sug.category)+'">Yes, send</button><p class="mute" style="margin-top:12px">Or change it:</p><div class="row">'+catBtns("psend","alt")+'</div></div>'+call112();
+ if(st==="sent"&&p)return '<div class="card"><h2>✓ Message sent</h2><p class="mute">Sent to the '+esc(p.to.toLowerCase())+'. No names or numbers were shared.</p>'+tags(p.cat,p.urg)+(p.cat==="Emergency"?'<p><strong>Call 112 now.</strong> '+(p.alerted?"Responders have been emailed.":"Your message is in the responders’ inbox, but no alert channel is set up.")+'</p>':"")+(p.replies.length?p.replies.map(function(r){return '<div class="m">'+esc(r)+'</div>'}).join(""):'<p class="mute">Waiting for a reply…</p>')+(p.status==="closed"?'<p class="mute">Chat closed: issue solved.</p>':"")+'<p><button class="b" data-act="pstep" data-v="compose">Send another</button></p></div>'+call112();
+ if(st==="suggest"&&ui.sug)return '<div class="card"><h1>Looks like “'+esc(ui.sug.category)+'”. Is that right?</h1><p class="mute">'+(ui.sug.mode==="ai"?"AI only suggests. You decide.":"Quick guess (AI unavailable). You decide.")+'</p>'+(ui.sug.followup?'<p>🤔 '+esc(ui.sug.followup)+'</p>':"")+'<button class="b" data-act="psend" data-v="'+esc(ui.sug.category)+'">Yes, send</button><p class="mute" style="margin-top:12px">Or change it:</p><div class="row">'+catBtns("psend","alt")+'</div></div>'+call112();
  if(st==="pick")return '<div class="card"><h1>Pick a category</h1><p class="mute">'+(ui.sug&&ui.sug.mode==="off"?"AI is off":"AI is slow or down")+': choose manually.</p><div class="row">'+catBtns("psend","")+'</div></div>'+call112();
  return '<button class="b emg" data-act="psend" data-v="Emergency">🚨 EMERGENCY</button>'+call112()+'<div class="card"><textarea id="p-text" maxlength="300" placeholder="What’s happening? e.g. your car is blocking my gate"></textarea><div class="err">'+esc(ui.err)+'</div><p style="margin-top:10px"><button class="b" data-act="psuggest">'+(ui.busy?"Thinking…":"Suggest category")+'</button></p><p class="mute">Or tap a category directly:</p><div class="row">'+catBtns("psend","alt")+'</div></div><div class="card mute">Found something with a TagBack sticker? <button class="b alt" data-act="rescan">Scan that tag instead</button></div>';
 }
@@ -209,7 +210,7 @@ function pingCard(p){
  return '<div class="card">'+tags(p.cat,p.urg)+' <span class="mute">→ '+esc(p.to)+(p.rerouted?" (re-routed)":"")+' · confidence '+esc(p.conf)+'</span><p style="margin-top:8px">'+esc(p.polite)+'</p><details><summary class="mute">Show original</summary><p>'+esc(p.orig)+'</p></details>'+p.replies.map(function(r){return '<p class="mute">You: '+esc(r)+'</p>'}).join("")+
  '<div class="row">'+["On my way, 5 min","Moving it now","Sorry, not mine"].map(function(q){return '<button class="b alt" data-act="arep" data-v="'+p.id+'|'+q+'">'+q+'</button>'}).join("")+'<button class="b alt" data-act="aop" data-v="'+p.id+'|reroute">Not for me</button><button class="b ok" data-act="aop" data-v="'+p.id+'|close">Solved ✓</button><button class="b bad" data-act="aop" data-v="'+p.id+'|block">Block</button></div></div>';
 }
-function keyCard(){return '<div class="card"><h1>Community inbox</h1><p class="mute">For vehicle owners, drivers and helpers. Enter the responder key (demo default: demo1234).</p><input id="k-in" placeholder="Responder key"><p style="margin-top:12px"><button class="b" data-act="pkey">Open</button></p><div class="err">'+(ui.badKey?"Wrong key.":"")+'</div></div>'}
+function keyCard(){return '<div class="card"><h1>Community inbox</h1><p class="mute">For vehicle owners, drivers and helpers. Enter the responder key.</p><input id="k-in" placeholder="Responder key"><p style="margin-top:12px"><button class="b" data-act="pkey">Open</button></p><div class="err">'+(ui.badKey?"Wrong key.":"")+'</div></div>'}
 async function pollHelp(){
  if(ui.role!=="place")return;
  var t=ui.aTab||"help";
@@ -247,7 +248,7 @@ function placeAdminView(){
  if(t==="rides")return h+ridesPane();
  if(!PK)return h+keyCard();
  var a=ui.adm;if(!a)return h+'<div class="card mute">Loading…</div>';
- if(t==="board")return h+'<div class="card"><h2>AI is '+(a.ai?"ON":"OFF")+'</h2><p class="mute">'+(a.ai?(a.keyset?"Claude is connected for suggestions.":"No ANTHROPIC_API_KEY set: a simple built-in classifier stands in."):"The select list alone routes messages.")+' Emergency keyword rules never use AI.</p><button class="b" data-act="aai">Switch AI '+(a.ai?"OFF":"ON")+'</button></div><div class="card"><h2>QR board for '+esc(a.place)+'</h2><div class="qrbox" id="qr"></div><div class="code" style="margin-top:10px">'+esc(placeUrl())+'</div></div>';
+ if(t==="board")return h+'<div class="card"><h2>AI is '+(a.ai?"ON":"OFF")+'</h2><p class="mute">'+(a.ai?(a.keyset?"Claude is connected for suggestions ("+a.aiUsed+"/"+a.aiCap+" used today).":"No ANTHROPIC_API_KEY set: a simple built-in classifier stands in."):"The select list alone routes messages.")+' Emergency keyword rules never use AI.</p><button class="b" data-act="aai">Switch AI '+(a.ai?"OFF":"ON")+'</button></div><div class="card"><h2>QR board for '+esc(a.place)+'</h2><div class="qrbox" id="qr"></div><div class="code" style="margin-top:10px">'+esc(placeUrl())+'</div></div>';
  var l=a.pings.filter(function(p){return p.status!=="closed"});
  return h+(l.length?l.map(pingCard).join(""):'<div class="card mute">No open messages.</div>');
 }
@@ -318,7 +319,7 @@ async function refresh(force){
   try{
     if(ui.kind==="place"&&ui.scanned){ui.rides=await api("GET","/api/place/"+ui.place.id+"/rides");if(ui.pingId)ui.ping=await api("GET","/api/ping/"+ui.pingId)}
     if(ui.role==="place"&&PK){var ad=await kapi("GET","/api/admin/state");ui.adm=ad;ui.rides=ad.rides;ui.badKey=false;
-      ad.pings.forEach(function(p){if(!seen[p.id]){seen[p.id]=1;if(!first&&p.cat==="Emergency")toast("WhatsApp alert (mock): EMERGENCY at "+ad.place)}});first=false}
+      ad.pings.forEach(function(p){if(!seen[p.id]){seen[p.id]=1;if(!first&&p.cat==="Emergency")toast("New EMERGENCY at "+ad.place)}});first=false}
   }catch(e){if(ui.role==="place"&&e.status===401){ui.badKey=true;PK=null;lset("tb-key",null)}}
   await pollHelp();
   var snap=JSON.stringify([ui.cm,S,ui.fRoomObj,ui.role,ui.fMode,ui.err,ui.scanned,ui.scanning,ui.rides,ui.ping,ui.adm,ui.pStep,ui.sug,ui.busy,ui.pTab,ui.aTab,ui.badKey]);
@@ -331,7 +332,9 @@ async function act(a,v){
   case "tab":ui.tab=v;ui.sel=null;if(v==="notes")await oapi("POST","/api/me/notes/read");break;
   case "sel":ui.sel=v;break;
   case "register":{var n=val("o-name");if(!n){ui.err="Enter your name.";break}
-    var d=await api("POST","/api/register",{name:n,email:val("o-email")});OT=d.ownerToken;lset("tb-owner",OT);ui.tab="qr";break}
+    var d=await api("POST","/api/register",{name:n,email:val("o-email")});OT=d.ownerToken;lset("tb-owner",OT);ui.rec=d.recovery;ui.tab="qr";break}
+  case "signin":{var rk=val("rk");if(!rk){ui.err="Paste your recovery key.";break}var sd=await api("POST","/api/login",{recovery:rk});OT=sd.ownerToken;lset("tb-owner",OT);ui.tab="requests";break}
+  case "newrec":{var nr=await oapi("POST","/api/me/recovery");ui.rec=nr.recovery;break}
   case "savepub":await oapi("POST","/api/me/pub",{name:val("p-name"),note:val("p-note"),ver:val("p-ver")});toast("Saved");break;
   case "toggleqr":await oapi("POST","/api/me/qr",{op:"toggle"});break;
   case "regen":await oapi("POST","/api/me/qr",{op:"regen"});toast("New QR generated. Reprint it; the old one no longer works.");break;
