@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TagBack – QR lost-and-found</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#e9eef4;--surface:#fff;--ink:#14213d;--mute:#5b6b82;--line:#cfd8e3;--tag:#f4a62a;--tagink:#14213d;--ok:#1f8a5b;--bad:#c2410c;--mine:#14213d;--minetx:#fff;--theirs:#e3eaf2}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d1524;--surface:#16223a;--ink:#e8eef8;--mute:#93a3bd;--line:#2a3a58;--tag:#f4a62a;--tagink:#14213d;--ok:#4cc38a;--bad:#f08a5d;--mine:#f4a62a;--minetx:#14213d;--theirs:#22314f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1524;--surface:#16223a;--ink:#e8eef8;--mute:#93a3bd;--line:#2a3a58;--tag:#f4a62a;--tagink:#14213d;--ok:#4cc38a;--bad:#f08a5d;--mine:#f4a62a;--minetx:#14213d;--theirs:#22314f}
+*,*:before,*:after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Outfit",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:920px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.brand{font-size:22px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.hole{width:14px;height:14px;border-radius:50%;border:3px solid var(--tag);display:inline-block}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;color:var(--mute);padding:6px 16px;border-radius:999px;font:inherit;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+h1{font-size:28px;line-height:1.15;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:18px;margin:0 0 8px}
+p{margin:0 0 10px}.mute{color:var(--mute);font-size:14px}
+label{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:72px;resize:vertical}
+button.b{font:inherit;font-weight:600;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--tag);color:var(--tagink)}
+button.b.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.b.bad{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+button.b.ok{background:var(--ok);color:#fff}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tabs button.on{background:var(--tag);color:var(--tagink);border-color:var(--tag)}
+.badge{background:var(--bad);color:#fff;border-radius:999px;font-size:12px;padding:1px 7px;margin-left:6px}
+.split{display:grid;grid-template-columns:280px 1fr;gap:14px}
+@media(max-width:720px){.split{grid-template-columns:1fr}}
+.item{display:block;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+.item.on{border-color:var(--tag);box-shadow:0 0 0 2px var(--tag)}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px;border:1px solid var(--line);color:var(--mute)}
+.pill.pending{color:var(--tagink);background:var(--tag);border-color:var(--tag)}.pill.active{color:#fff;background:var(--ok);border-color:var(--ok)}
+.pill.recovered{color:#fff;background:#3b6fd4;border-color:#3b6fd4}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding:4px 2px;margin:10px 0}
+.m{max-width:80%;padding:8px 12px;border-radius:14px;background:var(--theirs);align-self:flex-start;word-wrap:break-word}
+.m.me{background:var(--mine);color:var(--minetx);align-self:flex-end}
+.m small{display:block;opacity:.7;font-size:11px}
+.sys{align-self:center;font-size:13px;color:var(--mute)}
+.qrbox{width:200px;background:#fff;padding:8px;border-radius:12px;border:1px solid var(--line)}
+.qrbox svg{width:100%;height:auto;display:block}
+.code{font-family:ui-monospace,Menlo,monospace;background:var(--bg);border:1px dashed var(--line);padding:6px 10px;border-radius:8px;word-break:break-all;font-size:13px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;z-index:9}
+.err{color:var(--bad);font-size:14px;margin-top:6px}
+.call{display:block;text-align:center;text-decoration:none;color:var(--bad);border:2px solid var(--bad);border-radius:10px;padding:10px;font-weight:700;margin:8px 0}
+button.b.emg{width:100%;background:var(--bad);color:#fff;font-size:18px;padding:16px}
+details summary{cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><span class="hole"></span>TagBack</div>
+  <div class="seg" role="tablist" aria-label="Demo view">
+    <button data-act="role" data-v="owner" id="r-owner">Owner</button>
+    <button data-act="role" data-v="finder" id="r-finder">Finder</button>
+    <button data-act="role" data-v="place" id="r-place">Community</button>
+  </div>
+</header>
+<div id="app"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+<script>
+"use strict";
+var KEY="tagback-v1";
+var S={owner:null,rooms:[],notes:[],blocked:[],g:{}};
+var ui={role:"owner",tab:"requests",sel:null,fRoom:null,fMode:"landing",err:"",qrUrl:"",scanned:false,scanning:false};
+function load(){try{var v=localStorage.getItem(KEY);return v?JSON.parse(v):null}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function rid(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,function(b){return b.toString(16).padStart(2,"0")}).join("")}
+async function sha(s){var b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));return Array.from(new Uint8Array(b),function(x){return x.toString(16).padStart(2,"0")}).join("")}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function tm(t){return new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}
+function $(i){return document.getElementById(i)}
+function val(i){var e=$(i);return e?e.value.trim():""}
+function toast(t){var e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){e.hidden=true},2600)}
+function room(id){return S.rooms.find(function(r){return r.id===id})}
+function note(text,rid_){S.notes.unshift({id:rid(4),text:text,t:Date.now(),read:false,room:rid_||null})}
+var LIMIT_PRE=3, MAX_REQ=3, MAX_LEN=500;
+
+/* ---------- views ---------- */
+function render(){
+  $("r-owner").className=ui.role==="owner"?"on":"";$("r-finder").className=ui.role==="finder"?"on":"";$("r-place").className=ui.role==="place"?"on":"";
+  $("app").innerHTML=ui.role==="owner"?ownerView():ui.role==="place"?placeAdminView():finderView();
+  if(ui.role==="owner"&&S.owner&&ui.tab==="qr")drawQR();
+  if(ui.role==="place"&&ui.aTab==="board")drawPlaceQR();
+  var c=document.querySelector(".chat");if(c)c.scrollTop=c.scrollHeight;
+}
+function ownerView(){
+  if(!S.owner)return '<div class="card"><h1>Get your permanent QR tag</h1><p class="mute">Create an account to get one QR code you can stick on every belonging. Finders never see your phone or email.</p>'+
+   '<label for="o-name">Your name</label><input id="o-name" maxlength="40" placeholder="e.g. Aarav S.">'+
+   '<label for="o-email">Email (private, used only for alerts)</label><input id="o-email" type="email" placeholder="you@example.com">'+
+   '<p class="mute" style="margin-top:12px">Your email stays private and is never shown to finders.</p>'+
+   '<button class="b" data-act="register">Create account and QR</button><div class="err">'+esc(ui.err)+'</div></div>';
+  var unread=S.notes.filter(function(n){return !n.read}).length;
+  var pend=S.rooms.filter(function(r){return r.status==="pending"}).length;
+  var tabs=[["requests","Requests"+(pend?'<span class="badge">'+pend+'</span>':"")],["active","Active"],["history","Closed & recovered"],["qr","My QR"],["notes","Notifications"+(unread?'<span class="badge">'+unread+'</span>':"")],["settings","Privacy"]];
+  var h='<div class="tabs" role="tablist">'+tabs.map(function(t){return '<button data-act="tab" data-v="'+t[0]+'" class="'+(ui.tab===t[0]?"on":"")+'">'+t[1]+'</button>'}).join("")+'</div>';
+  if(ui.tab==="qr")h+=qrTab();else if(ui.tab==="notes")h+=notesTab();else if(ui.tab==="settings")h+=settingsTab();else h+=roomsTab();
+  return h;
+}
+function roomsTab(){
+  var sets={requests:["pending"],active:["active"],history:["closed","recovered","rejected"]}[ui.tab];
+  var list=S.rooms.filter(function(r){return sets.indexOf(r.status)>-1});
+  var left=list.length?list.map(function(r){var last=r.msgs[r.msgs.length-1];
+    return '<button class="item'+(ui.sel===r.id?" on":"")+'" data-act="sel" data-v="'+r.id+'"><div class="row" style="justify-content:space-between"><strong>'+esc(r.item)+'</strong><span class="pill '+r.status+'">'+r.status+'</span></div><div class="mute">'+esc(r.fname)+(last?" · "+esc(last.text.slice(0,40)):"")+'</div></button>'}).join(""):
+    '<div class="card mute">Nothing here yet. '+(ui.tab==="requests"?"Switch to Finder, scan the tag, and send a request.":"")+'</div>';
+  var r=room(ui.sel);var right=r&&list.indexOf(r)>-1?chatPanel(r,"owner"):'<div class="card mute">Select a conversation.</div>';
+  return '<div class="split"><div>'+left+'</div><div>'+right+'</div></div>';
+}
+function chatPanel(r,who){
+  var h='<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">'+esc(r.item)+'</h2><span class="pill '+r.status+'">'+r.status+'</span></div>';
+  if(who==="owner"){h+='<p class="mute">From '+esc(r.fname)+(r.loc?" · found at "+esc(r.loc):"")+(r.desc?" · "+esc(r.desc):"")+'</p>'}
+  h+='<div class="chat" aria-live="polite">'+r.msgs.map(function(m){
+    if(m.from==="sys")return '<div class="sys">'+esc(m.text)+'</div>';
+    var me=m.from===who;return '<div class="m'+(me?" me":"")+'"><small>'+(m.from==="owner"?"Owner":esc(r.fname))+' · '+tm(m.t)+'</small>'+esc(m.text)+'</div>'}).join("")+'</div>';
+  var open=r.status==="pending"||r.status==="active";
+  if(who==="owner"&&r.status==="pending")h+='<div class="row"><button class="b ok" data-act="accept" data-v="'+r.id+'">Accept and reply</button><button class="b bad" data-act="reject" data-v="'+r.id+'">Reject</button><button class="b bad" data-act="block" data-v="'+r.id+'">Block finder</button></div><p class="mute" style="margin-top:8px">You can read messages now. Accept to reply.</p>';
+  else if(open){
+    var pre=who==="finder"&&r.status==="pending";var used=r.msgs.filter(function(m){return m.from==="finder"}).length;
+    if(pre&&used>=LIMIT_PRE)h+='<p class="mute">You’ve sent '+LIMIT_PRE+' messages. Please wait for the owner to accept before sending more.</p>';
+    else h+='<div class="row"><input id="msg" maxlength="'+MAX_LEN+'" placeholder="'+(pre?"Message ("+(LIMIT_PRE-used)+" left until accepted)":"Type a message")+'" style="flex:1;min-width:160px"><button class="b" data-act="send" data-v="'+who+'|'+r.id+'">Send</button></div>';
+    if(who==="owner")h+='<div class="row" style="margin-top:10px"><button class="b ok" data-act="recover" data-v="'+r.id+'">Mark as recovered</button><button class="b alt" data-act="close" data-v="'+r.id+'">Close chat</button><button class="b bad" data-act="block" data-v="'+r.id+'">Block</button></div>';
+  }else h+='<p class="mute">This conversation is '+r.status+'. No further messages can be sent.</p>';
+  return h+'<div class="err">'+esc(ui.err)+'</div></div>';
+}
+function qrTab(){
+  var o=S.owner;
+  return '<div class="card"><h2>Your permanent QR</h2><div class="row" style="align-items:flex-start;gap:20px"><div><div class="qrbox" id="qr"></div></div><div style="flex:1;min-width:220px">'+
+  '<p>One code for every belonging. Print it and stick it on your bag, laptop, wallet.</p><p class="mute">Status: <strong>'+(o.qrActive?"Active":"Deactivated")+'</strong>. The code holds only a random ID, never personal data.</p>'+
+  '<div class="code">'+esc(ui.qrUrl)+'</div><div class="row" style="margin-top:12px"><button class="b" data-act="dl">Download SVG</button><button class="b alt" data-act="toggleqr">'+(o.qrActive?"Deactivate":"Reactivate")+'</button><button class="b alt" data-act="regen">Regenerate</button></div></div></div></div>';
+}
+function notesTab(){
+  return '<div class="card"><h2>Notifications</h2>'+(S.notes.length?S.notes.map(function(n){return '<div class="item" style="cursor:default"><div class="row" style="justify-content:space-between"><span>'+esc(n.text)+'</span><span class="mute">'+tm(n.t)+'</span></div></div>'}).join(""):'<p class="mute">No notifications yet. They’re created only when a finder submits the contact form, not when the QR is merely scanned.</p>')+
+  '<p class="mute">Email and browser push need a server; they’re the next step beyond this prototype.</p></div>';
+}
+function settingsTab(){
+  var p=S.owner.pub;
+  return '<div class="card"><h2>What finders can see</h2><label for="p-name">Public display name</label><input id="p-name" maxlength="40" value="'+esc(p.name)+'">'+
+  '<label for="p-note">Public note</label><textarea id="p-note" maxlength="200">'+esc(p.note)+'</textarea>'+
+  '<label for="p-ver">Verification phrase (shown on your landing page so fake stickers are spotted)</label><input id="p-ver" maxlength="40" value="'+esc(p.ver)+'">'+
+  '<p style="margin-top:12px"><button class="b" data-act="savepub">Save</button></p>'+
+  '<p class="mute">Your email and phone are never shown. Blocked finders: '+S.blocked.length+'.</p></div>';
+}
+function finderView(){
+  if(ui.kind==="place"&&ui.scanned)return placeView();
+  if(!ui.scanned&&ui.fMode==="landing")return scanCard();
+  var p=ui.pub||{},r=ui.fRoomObj,live=r&&(r.status==="pending"||r.status==="active");
+  if(ui.fMode==="chat"&&r)return chatPanel(r,"finder")+'<div class="card"><h2>Your recovery code</h2><p class="mute">Save it to return to this chat from another browser.</p><div class="code">'+esc(RT)+'</div></div>';
+  if(ui.fMode==="recover")return '<div class="card"><h2>Reopen a conversation</h2><label for="rc">Recovery code</label><input id="rc" placeholder="Paste your code"><p style="margin-top:12px"><button class="b" data-act="dorecover">Reopen</button> <button class="b alt" data-act="fmode" data-v="landing">Back</button></p><div class="err">'+esc(ui.err)+'</div></div>';
+  if(ui.fMode==="form"&&!live)return '<div class="card"><h1>Tell '+esc(p.name)+' what you found</h1><p class="mute">No account needed. Your contact details stay private.</p>'+
+   '<label for="f-item">Found item *</label><input id="f-item" maxlength="60" placeholder="e.g. Black backpack">'+
+   '<label for="f-name">Your display name *</label><input id="f-name" maxlength="30" placeholder="e.g. Library helper">'+
+   '<label for="f-desc">Description</label><input id="f-desc" maxlength="150">'+
+   '<label for="f-loc">Where you found it</label><input id="f-loc" maxlength="100">'+
+   '<label for="f-msg">Message *</label><textarea id="f-msg" maxlength="'+MAX_LEN+'"></textarea>'+
+   '<p style="margin-top:12px"><button class="b" data-act="submit">Send to owner</button> <button class="b alt" data-act="fmode" data-v="landing">Back</button></p><div class="err">'+esc(ui.err)+'</div></div>';
+  return '<div class="card"><p class="mute">You scanned a tag. Does this match the sticker? Verification phrase:</p><h2>'+esc(p.ver||"(none set)")+'</h2></div>'+
+   '<div class="card"><h1>This belongs to '+esc(p.name)+'</h1><p>'+esc(p.note||"If you found something of mine, please get in touch. Thank you!")+'</p>'+
+   '<div class="row"><button class="b" data-act="contact">'+(live?"Open your conversation":"Contact owner")+'</button><button class="b alt" data-act="fmode" data-v="recover">I have a recovery code</button></div><div class="err">'+esc(ui.err)+'</div></div>';
+}
+function drawQR(){
+  var el=$("qr");if(!el)return;
+  try{var q=qrcode(0,"M");q.addData(ui.qrUrl);q.make();el.innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});ui.svg=el.innerHTML}
+  catch(e){el.textContent="QR library unavailable"}
+}
+function setQrUrl(){var b=location.href.split("#")[0];ui.qrUrl=S.owner?b+"#tag-"+S.owner.qrId:""}
+
+/* ---------- PingME community layer ---------- */
+var CATS=["Blocked vehicle","Need a ride","Share a ride","Lost item","Other"];
+var NICK=lget("tb-nick")||(function(){var n="Guest-"+(100+Math.floor(Math.random()*900));lset("tb-nick",n);return n})(),PK=lget("tb-key"),seen={},first=true;
+function kapi(m,p,b){return api(m,p,b,{"x-key":PK||""})}
+function pid(){return ui.place?ui.place.id:"station"}
+function placeUrl(){return location.href.split("#")[0]+"#place-station"}
+function tags(c,u){return '<span class="pill'+(u==="emergency"||u==="high"?" pending":"")+'">'+esc(u)+'</span> <span class="pill">'+esc(c)+'</span>'}
+function call112(){return '<a class="call" href="tel:112">📞 Call 112</a>'}
+function catBtns(act,cls){return CATS.map(function(c){return '<button class="b '+cls+'" data-act="'+act+'" data-v="'+c+'">'+c+'</button>'}).join("")}
+function placeView(){
+ var h='<h1>📍 '+esc(ui.place.name)+'</h1><p class="mute">You are '+NICK+'. No phone numbers or names are shared.</p>';
+ h+='<div class="tabs"><button data-act="pset" data-v="msg" class="'+(ui.pTab!=="rides"?"on":"")+'">Message</button><button data-act="pset" data-v="rides" class="'+(ui.pTab==="rides"?"on":"")+'">Ride board</button></div>';
+ return h+(ui.pTab==="rides"?ridesPane():msgPane())+'<p><button class="b alt" data-act="rescan">Scan a different QR</button></p>';
+}
+function msgPane(){
+ var st=ui.pStep||"compose",p=ui.ping;
+ if(st==="sent"&&p)return '<div class="card"><h2>✓ Message sent</h2><p class="mute">Sent to the '+esc(p.to.toLowerCase())+'. No names or numbers were shared.</p>'+tags(p.cat,p.urg)+(p.cat==="Emergency"?'<p><strong>Call 112 now.</strong> The owner has been alerted.</p>':"")+(p.replies.length?p.replies.map(function(r){return '<div class="m">'+esc(r)+'</div>'}).join(""):'<p class="mute">Waiting for a reply…</p>')+(p.status==="closed"?'<p class="mute">Chat closed: issue solved.</p>':"")+'<p><button class="b" data-act="pstep" data-v="compose">Send another</button></p></div>'+call112();
+ if(st==="suggest"&&ui.sug)return '<div class="card"><h1>Looks like “'+esc(ui.sug.category)+'”. Is that right?</h1><p class="mute">AI only suggests. You decide.</p>'+(ui.sug.followup?'<p>🤔 '+esc(ui.sug.followup)+'</p>':"")+'<button class="b" data-act="psend" data-v="'+esc(ui.sug.category)+'">Yes, send</button><p class="mute" style="margin-top:12px">Or change it:</p><div class="row">'+catBtns("psend","alt")+'</div></div>'+call112();
+ if(st==="pick")return '<div class="card"><h1>Pick a category</h1><p class="mute">'+(ui.sug&&ui.sug.mode==="off"?"AI is off":"AI is slow or down")+': choose manually.</p><div class="row">'+catBtns("psend","")+'</div></div>'+call112();
+ return '<button class="b emg" data-act="psend" data-v="Emergency">🚨 EMERGENCY</button>'+call112()+'<div class="card"><textarea id="p-text" maxlength="300" placeholder="What’s happening? e.g. your car is blocking my gate"></textarea><div class="err">'+esc(ui.err)+'</div><p style="margin-top:10px"><button class="b" data-act="psuggest">'+(ui.busy?"Thinking…":"Suggest category")+'</button></p><p class="mute">Or tap a category directly:</p><div class="row">'+catBtns("psend","alt")+'</div></div><div class="card mute">Found something with a TagBack sticker? <button class="b alt" data-act="rescan">Scan that tag instead</button></div>';
+}
+function ridesPane(){
+ return (ui.rides||[]).map(function(r){var sp=Math.max(r.joined.length+1,2);
+ return '<div class="card"><h2>'+esc(r.from)+' → '+esc(r.to)+' · '+esc(r.time)+'</h2><p class="mute">Posted by '+esc(r.by)+'</p><p>Total ₹'+r.fare+'. <strong>₹'+Math.round(r.fare/sp)+' each</strong> for '+sp+' riders (mock, no payments).</p><p>'+(r.driver?'🚗 '+esc(r.driver)+' is <strong>available</strong>':'<span class="mute">No driver yet</span>')+(r.joined.length?'<br>👥 Joined: '+r.joined.map(esc).join(", "):"")+'</p><div class="row"><button class="b alt" data-act="rdrv" data-v="'+r.id+'">🚗 I’m available</button><button class="b" data-act="rjoin" data-v="'+r.id+'">Request to join</button></div></div>'}).join("")+
+ '<div class="card"><h2>Post a trip ahead</h2><div class="row"><input id="rf" placeholder="From" style="flex:1"><input id="rt" placeholder="To" style="flex:1"></div><p style="margin-top:10px"><button class="b" data-act="rpost">Post trip</button></p><div class="err">'+esc(ui.err)+'</div></div>';
+}
+function pingCard(p){
+ return '<div class="card">'+tags(p.cat,p.urg)+' <span class="mute">→ '+esc(p.to)+(p.rerouted?" (re-routed)":"")+' · confidence '+esc(p.conf)+'</span><p style="margin-top:8px">'+esc(p.polite)+'</p><details><summary class="mute">Show original</summary><p>'+esc(p.orig)+'</p></details>'+p.replies.map(function(r){return '<p class="mute">You: '+esc(r)+'</p>'}).join("")+
+ '<div class="row">'+["On my way, 5 min","Moving it now","Sorry, not mine"].map(function(q){return '<button class="b alt" data-act="arep" data-v="'+p.id+'|'+q+'">'+q+'</button>'}).join("")+'<button class="b alt" data-act="aop" data-v="'+p.id+'|reroute">Not for me</button><button class="b ok" data-act="aop" data-v="'+p.id+'|close">Solved ✓</button><button class="b bad" data-act="aop" data-v="'+p.id+'|block">Block</button></div></div>';
+}
+function keyCard(){return '<div class="card"><h1>Community inbox</h1><p class="mute">For vehicle owners, drivers and helpers. Enter the responder key (demo default: demo1234).</p><input id="k-in" placeholder="Responder key"><p style="margin-top:12px"><button class="b" data-act="pkey">Open</button></p><div class="err">'+(ui.badKey?"Wrong key.":"")+'</div></div>'}
+async function pollHelp(){
+ if(ui.role!=="place")return;
+ var t=ui.aTab||"help";
+ try{
+  if(t==="rides")ui.rides=await api("GET","/api/place/station/rides");
+  if(t!=="help")return;
+  var c=ui.cm=ui.cm||{v:"list"};
+  if(c.v==="list")c.list=await api("GET","/api/communities");
+  else if(c.v==="comm")c.data=await api("GET","/api/communities/"+c.name+"/posts");
+  else if(c.v==="post")c.post=await api("GET","/api/posts/"+c.pid);
+ }catch(e){}
+}
+function helpView(){
+ var c=ui.cm||{v:"list"},h="",err='<div class="err">'+esc(ui.err)+'</div>';
+ if(c.v==="post"){
+  var p=c.post;if(!p)return '<div class="card mute">Loading…</div>';
+  return '<p><button class="b alt" data-act="hback" data-v="comm">← c/'+esc(p.comm)+'</button></p><div class="card"><h2>'+esc(p.title)+'</h2><p class="mute">u/'+esc(p.nick)+' · '+tm(p.t)+'</p><p style="white-space:pre-wrap">'+esc(p.body)+'</p></div>'+
+  '<div class="card"><h2>'+p.comments.length+' repl'+(p.comments.length===1?"y":"ies")+'</h2><div class="chat">'+(p.comments.map(function(m){return '<div class="m'+(m.nick===NICK?" me":"")+'"><small>u/'+esc(m.nick)+' · '+tm(m.t)+'</small>'+esc(m.text)+'</div>'}).join("")||'<div class="sys">No replies yet. Offer help or a price.</div>')+'</div>'+
+  '<div class="row"><input id="c-text" maxlength="300" placeholder="Offer or negotiate, e.g. I can do it for ₹800" style="flex:1;min-width:160px"><button class="b" data-act="ccomment">Reply</button></div>'+err+'</div>';
+ }
+ if(c.v==="comm"){
+  var d=c.data;if(!d)return '<div class="card mute">Loading…</div>';
+  return '<p><button class="b alt" data-act="hback" data-v="list">← All communities</button></p><h1>c/'+esc(d.community.name)+'</h1><p class="mute">'+esc(d.community.desc||"")+'</p>'+
+  '<div class="card"><h2>Post your need</h2><input id="n-title" maxlength="100" placeholder="e.g. Need a cab to the airport, 6 AM"><label for="n-body">Details (optional)</label><textarea id="n-body" maxlength="500" placeholder="People, budget, timing…"></textarea><p style="margin-top:12px"><button class="b" data-act="hnewp">Post</button></p>'+err+'</div>'+
+  (d.posts.length?d.posts.map(function(p){return '<button class="item" data-act="hpost" data-v="'+p.id+'"><strong>'+esc(p.title)+'</strong><div class="mute">u/'+esc(p.nick)+' · '+tm(p.t)+' · '+p.comments+' repl'+(p.comments===1?"y":"ies")+'</div></button>'}).join(""):'<div class="card mute">No posts yet. Be the first to post a need.</div>');
+ }
+ var l=c.list;if(!l)return '<div class="card mute">Loading…</div>';
+ return '<h1>Community help</h1><p class="mute">Join a community, post what you need, and others reply to offer help or negotiate. You are u/'+esc(NICK)+'.</p>'+
+ '<div class="card"><h2>Create a community</h2><input id="cm-name" maxlength="30" placeholder="e.g. cabs_city or hotels_city"><label for="cm-desc">What is it for?</label><input id="cm-desc" maxlength="150" placeholder="Short description"><p style="margin-top:12px"><button class="b" data-act="hnewc">Create</button></p>'+err+'</div>'+
+ l.map(function(x){return '<button class="item" data-act="hcomm" data-v="'+esc(x.name)+'"><strong>c/'+esc(x.name)+'</strong><div class="mute">'+esc(x.desc||"")+' · '+x.posts+' post'+(x.posts===1?"":"s")+'</div></button>'}).join("");
+}
+function placeAdminView(){
+ var t=ui.aTab||"help",h='<div class="tabs">'+[["help","Community help"],["inbox","Inbox"],["rides","Ride board"],["board","QR board & AI"]].map(function(x){return '<button data-act="atab" data-v="'+x[0]+'" class="'+(t===x[0]?"on":"")+'">'+x[1]+'</button>'}).join("")+'</div>';
+ if(t==="help")return h+helpView();
+ if(t==="rides")return h+ridesPane();
+ if(!PK)return h+keyCard();
+ var a=ui.adm;if(!a)return h+'<div class="card mute">Loading…</div>';
+ if(t==="board")return h+'<div class="card"><h2>AI is '+(a.ai?"ON":"OFF")+'</h2><p class="mute">'+(a.ai?(a.keyset?"Claude is connected for suggestions.":"No ANTHROPIC_API_KEY set: a simple built-in classifier stands in."):"The select list alone routes messages.")+' Emergency keyword rules never use AI.</p><button class="b" data-act="aai">Switch AI '+(a.ai?"OFF":"ON")+'</button></div><div class="card"><h2>QR board for '+esc(a.place)+'</h2><div class="qrbox" id="qr"></div><div class="code" style="margin-top:10px">'+esc(placeUrl())+'</div></div>';
+ var l=a.pings.filter(function(p){return p.status!=="closed"});
+ return h+(l.length?l.map(pingCard).join(""):'<div class="card mute">No open messages.</div>');
+}
+function drawPlaceQR(){var el=$("qr");if(!el)return;try{var q=qrcode(0,"M");q.addData(placeUrl());q.make();el.innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true})}catch(e){el.textContent="QR library unavailable"}}
+
+/* ---------- finder scanning ---------- */
+var cam=null,camStop=false;
+function scanCard(){
+ return '<div class="card"><h1>Scan the QR tag</h1><p class="mute">Point your camera at the QR sticker on the item you found. No account needed.</p>'+
+ (ui.scanning?'<video id="cam" playsinline muted style="width:100%;max-height:320px;border-radius:12px;background:#000;object-fit:cover"></video><p style="margin-top:10px"><button class="b alt" data-act="stopscan">Stop camera</button></p>':
+ '<div class="row"><button class="b" data-act="startscan">Open camera</button><button class="b alt" data-act="pick">Take or upload photo</button><input id="qrfile" type="file" accept="image/*" capture="environment" hidden></div>')+
+ '<label for="qrtext">Or paste the tag link or code</label><div class="row"><input id="qrtext" placeholder="Link ending in #tag-…" style="flex:1;min-width:160px"><button class="b alt" data-act="usecode">Use code</button></div>'+
+ '<div class="err">'+esc(ui.err)+'</div></div>';
+}
+function stopCam(){camStop=true;if(cam){cam.getTracks().forEach(function(t){t.stop()});cam=null}}
+function jsq(src,w,h){if(typeof jsQR==="undefined")return null;var c=document.createElement("canvas");c.width=w;c.height=h;var x=c.getContext("2d",{willReadFrequently:true});x.drawImage(src,0,0,w,h);var d=x.getImageData(0,0,w,h);var q=jsQR(d.data,w,h);return q?q.data:null}
+function decodeSource(src,w,h){
+ if("BarcodeDetector" in window){try{return new BarcodeDetector({formats:["qr_code"]}).detect(src).then(function(r){return r[0]?r[0].rawValue:null}).catch(function(){return jsq(src,w,h)})}catch(e){}}
+ return Promise.resolve(jsq(src,w,h));
+}
+async function startCam(){
+ camStop=false;
+ try{cam=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})}
+ catch(e){ui.scanning=false;ui.err="Camera isn’t available here (blocked or no camera). Use the photo option or paste the code.";render();return}
+ var v=$("cam");if(!v){stopCam();return}
+ v.srcObject=cam;try{await v.play()}catch(e){}
+ (async function loop(){
+  if(camStop)return;
+  if(v.videoWidth){var s=Math.min(1,800/v.videoWidth);var t=await decodeSource(v,Math.round(v.videoWidth*s),Math.round(v.videoHeight*s));if(t&&!camStop){handleScan(t);return}}
+  setTimeout(loop,250);
+ })();
+}
+async function handleScan(text){
+ stopCam();ui.scanning=false;
+ var pm=String(text).match(/place-([a-z0-9-]+)/i);
+ if(pm){try{ui.place=await api("GET","/api/place/"+pm[1].toLowerCase());ui.kind="place";ui.scanned=true;ui.pStep="compose";ui.err="";toast("Place recognised")}catch(e){ui.err="Unknown place QR."}return refresh(true)}
+ var m=String(text).match(/tag-([0-9a-f]{20})/i)||String(text).match(/^([0-9a-f]{20})$/i);
+ if(!m){ui.err="That isn’t a TagBack QR code.";return refresh(true)}
+ try{ui.kind="tag";ui.tagId=m[1].toLowerCase();ui.pub=await api("GET","/api/tag/"+ui.tagId);ui.scanned=true;ui.err="";toast("Tag recognised")}
+ catch(e){ui.err=e.status===410?"This tag is inactive. The owner has turned it off.":"This tag isn’t valid. The owner may have replaced it."}
+ refresh(true);
+}
+document.addEventListener("change",async function(e){
+ if(e.target.id!=="qrfile"||!e.target.files[0])return;
+ try{var bmp=await createImageBitmap(e.target.files[0]);var s=Math.min(1,1000/Math.max(bmp.width,bmp.height));var t=await decodeSource(bmp,Math.round(bmp.width*s),Math.round(bmp.height*s));
+  if(t)handleScan(t);else{ui.err="No QR code found in that photo. Move closer and use good light.";render()}}
+ catch(err){ui.err="Couldn’t read that image.";render()}
+});
+
+/* ---------- network ---------- */
+function lget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lset(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+var OT=lget("tb-owner"),RT=lget("tb-room"),last="";
+async function api(m,p,b,h){
+  var r=await fetch(p,{method:m,headers:Object.assign({"Content-Type":"application/json"},h||{}),body:b?JSON.stringify(b):undefined});
+  var d={};try{d=await r.json()}catch(e){}
+  if(!r.ok){var er=new Error(d.error||"Something went wrong.");er.status=r.status;throw er}
+  return d;
+}
+function oapi(m,p,b){return api(m,p,b,{"x-owner":OT||""})}
+function rerender(){var a=document.activeElement,id=a&&a.id,v=a&&a.value,s=a&&a.selectionStart;render();
+  if(id){var e=$(id);if(e&&v!=null){e.value=v;e.focus();try{e.setSelectionRange(s,s)}catch(x){}}}}
+async function refresh(force){
+  if(OT){try{var d=await oapi("GET","/api/me");S.owner=d.owner;S.rooms=d.rooms;S.notes=d.notes;S.blocked=new Array(d.blocked);setQrUrl()}
+    catch(e){if(e.status===401){OT=null;lset("tb-owner",null);S.owner=null}}}
+  if(RT){try{ui.fRoomObj=await api("GET","/api/room",null,{"x-room":RT})}
+    catch(e){if(e.status===404){RT=null;lset("tb-room",null);ui.fRoomObj=null;if(ui.fMode==="chat"){ui.fMode="landing";ui.err="This conversation has ended."}}}}
+  try{
+    if(ui.kind==="place"&&ui.scanned){ui.rides=await api("GET","/api/place/"+ui.place.id+"/rides");if(ui.pingId)ui.ping=await api("GET","/api/ping/"+ui.pingId)}
+    if(ui.role==="place"&&PK){var ad=await kapi("GET","/api/admin/state");ui.adm=ad;ui.rides=ad.rides;ui.badKey=false;
+      ad.pings.forEach(function(p){if(!seen[p.id]){seen[p.id]=1;if(!first&&p.cat==="Emergency")toast("WhatsApp alert (mock): EMERGENCY at "+ad.place)}});first=false}
+  }catch(e){if(ui.role==="place"&&e.status===401){ui.badKey=true;PK=null;lset("tb-key",null)}}
+  await pollHelp();
+  var snap=JSON.stringify([ui.cm,S,ui.fRoomObj,ui.role,ui.fMode,ui.err,ui.scanned,ui.scanning,ui.rides,ui.ping,ui.adm,ui.pStep,ui.sug,ui.busy,ui.pTab,ui.aTab,ui.badKey]);
+  if(force||snap!==last){last=snap;rerender()}
+}
+async function act(a,v){
+  ui.err="";if(a!=="startscan")stopCam();
+  try{switch(a){
+  case "role":ui.role=v;ui.scanning=false;break;
+  case "tab":ui.tab=v;ui.sel=null;if(v==="notes")await oapi("POST","/api/me/notes/read");break;
+  case "sel":ui.sel=v;break;
+  case "register":{var n=val("o-name");if(!n){ui.err="Enter your name.";break}
+    var d=await api("POST","/api/register",{name:n,email:val("o-email")});OT=d.ownerToken;lset("tb-owner",OT);ui.tab="qr";break}
+  case "savepub":await oapi("POST","/api/me/pub",{name:val("p-name"),note:val("p-note"),ver:val("p-ver")});toast("Saved");break;
+  case "toggleqr":await oapi("POST","/api/me/qr",{op:"toggle"});break;
+  case "regen":await oapi("POST","/api/me/qr",{op:"regen"});toast("New QR generated. Reprint it; the old one no longer works.");break;
+  case "dl":try{var blob=new Blob(['<?xml version="1.0"?>'+ui.svg.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"')],{type:"image/svg+xml"});var u=URL.createObjectURL(blob);var l=document.createElement("a");l.href=u;l.download="tagback-qr.svg";document.body.appendChild(l);l.click();l.remove();toast("Downloading QR")}catch(e){toast("Download unavailable here")}return;
+  case "psuggest":{var tx=val("p-text");if(!tx){ui.err="Type a message first.";break}
+    ui.draft=tx;ui.busy=true;rerender();
+    try{ui.sug=await api("POST","/api/place/"+pid()+"/suggest",{text:tx})}catch(e){ui.sug={mode:"down"}}
+    ui.busy=false;if(ui.sug.mode==="rules")return act("psend","Emergency");
+    ui.pStep=ui.sug.category?"suggest":"pick";break}
+  case "psend":{var ptx=val("p-text")||ui.draft||(v==="Emergency"?"Emergency, no details":"");if(!ptx){ui.err="Type a message first.";break}
+    var pg=await api("POST","/api/place/"+pid()+"/ping",{text:ptx,cat:v,nick:NICK,ai:ui.sug&&ui.sug.category?ui.sug:null});
+    ui.pingId=pg.id;ui.ping=pg;ui.pStep="sent";ui.draft="";ui.sug=null;break}
+  case "pstep":ui.pStep=v;ui.err="";break;
+  case "pset":ui.pTab=v;break;
+  case "rescan":ui.scanned=false;ui.kind=null;ui.place=null;ui.fMode="landing";ui.pingId=null;ui.ping=null;ui.pStep="compose";break;
+  case "rdrv":await api("POST","/api/rides/"+v+"/driver",{nick:NICK});break;
+  case "rjoin":await api("POST","/api/rides/"+v+"/join",{nick:NICK});break;
+  case "rpost":{var f1=val("rf"),t1=val("rt");if(!f1||!t1){ui.err="Enter from and to.";break}await api("POST","/api/place/"+pid()+"/rides",{from:f1,to:t1,nick:NICK});break}
+  case "hcomm":ui.cm={v:"comm",name:v};break;
+  case "hpost":ui.cm={v:"post",name:ui.cm.name,pid:v};break;
+  case "hback":ui.cm=v==="list"?{v:"list"}:{v:"comm",name:ui.cm.name};break;
+  case "hnewc":{var cn=val("cm-name");if(!cn){ui.err="Give your community a name.";break}
+    var rc=await api("POST","/api/communities",{name:cn,desc:val("cm-desc"),nick:NICK});ui.cm={v:"comm",name:rc.name};break}
+  case "hnewp":{var pt=val("n-title");if(!pt){ui.err="Add a title for your need.";break}
+    var rp=await api("POST","/api/communities/"+ui.cm.name+"/posts",{title:pt,body:val("n-body"),nick:NICK});ui.cm={v:"post",name:ui.cm.name,pid:rp.id};break}
+  case "ccomment":{var ct=val("c-text");if(!ct)break;await api("POST","/api/posts/"+ui.cm.pid+"/comments",{text:ct,nick:NICK});break}
+  case "pkey":PK=val("k-in");if(!PK)break;lset("tb-key",PK);break;
+  case "atab":ui.aTab=v;break;
+  case "aai":await kapi("POST","/api/admin/ai",{ai:!ui.adm.ai});break;
+  case "arep":{var ap=v.split("|");await kapi("POST","/api/admin/ping/"+ap[0]+"/reply",{text:ap.slice(1).join("|")});break}
+  case "aop":{var ao=v.split("|");await kapi("POST","/api/admin/ping/"+ao[0]+"/"+ao[1]);break}
+  case "fmode":ui.fMode=v;break;
+  case "startscan":ui.scanning=true;rerender();startCam();return;
+  case "stopscan":ui.scanning=false;break;
+  case "pick":$("qrfile").click();return;
+  case "usecode":handleScan(val("qrtext"));return;
+  case "contact":ui.fMode=ui.fRoomObj&&(ui.fRoomObj.status==="pending"||ui.fRoomObj.status==="active")?"chat":"form";break;
+  case "submit":{var it=val("f-item"),nm=val("f-name"),ms=val("f-msg");
+    if(!it||!nm||!ms){ui.err="Item, display name and message are required.";break}
+    var q=await api("POST","/api/tag/"+ui.tagId+"/request",{item:it,fname:nm,desc:val("f-desc"),loc:val("f-loc"),msg:ms});
+    RT=q.roomToken;lset("tb-room",RT);ui.fMode="chat";toast("Sent. The owner has been notified.");break}
+  case "send":{var p=v.split("|"),t=val("msg");if(!t)break;
+    if(p[0]==="owner")await oapi("POST","/api/me/rooms/"+p[1]+"/msg",{text:t});
+    else await api("POST","/api/room/msg",{text:t},{"x-room":RT});break}
+  case "accept":await oapi("POST","/api/me/rooms/"+v+"/accept");ui.tab="active";ui.sel=v;break;
+  case "reject":await oapi("POST","/api/me/rooms/"+v+"/reject");ui.sel=null;break;
+  case "block":await oapi("POST","/api/me/rooms/"+v+"/block");ui.sel=null;toast("Finder blocked");break;
+  case "close":await oapi("POST","/api/me/rooms/"+v+"/close");ui.sel=null;break;
+  case "recover":await oapi("POST","/api/me/rooms/"+v+"/recover");ui.tab="history";ui.sel=v;break;
+  case "dorecover":{var c=val("rc");if(!c){ui.err="Paste your code.";break}
+    await api("GET","/api/room",null,{"x-room":c});RT=c;lset("tb-room",c);ui.fMode="chat";ui.scanned=true;break}
+  }}catch(e){ui.err=e.message}
+  refresh(true);
+}
+document.addEventListener("click",function(e){var b=e.target.closest("[data-act]");if(b)act(b.dataset.act,b.dataset.v)});
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.id==="msg"){var b=document.querySelector('[data-act="send"]');if(b)act("send",b.dataset.v)}});
+function boot(){
+  if(/(tag-[0-9a-f]{20}|place-[a-z0-9-]+)/i.test(location.hash)){ui.role="finder";handleScan(location.hash)}
+  refresh(true);setInterval(refresh,2500);
+}
+boot();
+</script>
+</body>
+</html>
