@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TagBack – QR lost-and-found</title>
+<title>TagBack – private QR lost-and-found</title>
+<meta name="description" content="Put a private QR sticker on your belongings. Finders can reach you without ever seeing your phone number or email.">
+<meta name="theme-color" content="#12203f">
+<meta property="og:title" content="TagBack – private QR lost-and-found">
+<meta property="og:description" content="One scan brings it home. Your contact details stay private.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='2' width='22' height='28' rx='7' fill='%23f4a62a'/%3E%3Ccircle cx='16' cy='9' r='3' fill='%2312203f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
@@ -58,26 +65,60 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .call{display:block;text-align:center;text-decoration:none;color:var(--bad);border:2px solid var(--bad);border-radius:10px;padding:10px;font-weight:700;margin:8px 0}
 button.b.emg{width:100%;background:var(--bad);color:#fff;font-size:18px;padding:16px}
 details summary{cursor:pointer}
+
+/* ---- polish layer ---- */
+:root{--head:"Bricolage Grotesque","Outfit",system-ui,sans-serif;--ink:#12203f;--bg:#eaf0f6;--line:#d3dce8}
+body{font-family:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.brand{font-family:var(--head)}
+h1{font-size:clamp(30px,5.2vw,46px);font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:12px}
+h2{font-weight:700;letter-spacing:-.01em}h3{font-size:17px;margin:10px 0 4px}
+.wrap{max-width:980px;padding:0 20px 40px}
+header{position:sticky;top:0;z-index:5;margin:0 -20px 22px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.brand{cursor:pointer}.hole{width:16px;height:16px;border-width:4px}
+.seg{flex-wrap:wrap}.seg button{transition:background .15s,color .15s}
+.card{border-radius:16px;padding:22px;box-shadow:0 10px 24px -16px rgba(18,32,63,.25)}
+input,textarea{background:var(--surface);transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus{border-color:var(--tag);box-shadow:0 0 0 3px color-mix(in srgb,var(--tag) 30%,transparent);outline:0}
+button.b{transition:filter .15s,transform .1s}button.b:hover{filter:brightness(.95)}button.b:active{transform:translateY(1px)}
+button.b.big{padding:13px 22px;font-size:16px}
+.item{transition:border-color .15s}.item:hover{border-color:var(--tag)}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:32px;align-items:center;padding:20px 0 34px}
+.lead{font-size:18px;color:var(--mute);max-width:46ch;margin-bottom:20px}
+.tagcard{justify-self:center;position:relative;width:230px;background:var(--tag);color:var(--tagink);border-radius:24px;padding:48px 20px 18px;transform-origin:50% -34px;animation:swing 2.6s cubic-bezier(.2,.7,.2,1) both;box-shadow:0 24px 40px -22px rgba(18,32,63,.55)}
+.tagcard:before{content:"";position:absolute;top:16px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--bg);box-shadow:inset 0 2px 3px rgba(0,0,0,.3)}
+.tagcard .qrbox{width:100%;border:0}.tagcard b{display:block;text-align:center;margin-top:12px;font-family:var(--head);font-size:17px}
+@keyframes swing{0%{transform:rotate(-14deg)}25%{transform:rotate(9deg)}50%{transform:rotate(-5deg)}75%{transform:rotate(2deg)}100%{transform:rotate(0)}}
+.sec{font-size:22px;margin:8px 0 12px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:14px}
+.steps>div{padding:20px;border-left:1px solid var(--line)}.steps>div:first-child{border-left:0}
+.n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--surface);font-weight:700;font-size:14px}
+.steps p{margin:0}
+.split2{display:grid;grid-template-columns:1.1fr 1fr;gap:32px}
+.facts{list-style:none;margin:0;padding:0}.facts li{padding:12px 0;border-top:1px solid var(--line)}.facts li:first-child{border-top:0;padding-top:0}
+button.b.emg{border-radius:14px;letter-spacing:.01em}
+footer{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+@media(max-width:720px){.hero,.split2,.steps{grid-template-columns:1fr}.steps>div{border-left:0;border-top:1px solid var(--line)}.steps>div:first-child{border-top:0}.tagcard{width:200px}}
+@media(prefers-reduced-motion:reduce){.tagcard{animation:none}*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div class="brand"><span class="hole"></span>TagBack</div>
-  <div class="seg" role="tablist" aria-label="Demo view">
+  <div class="brand" data-act="role" data-v="home"><span class="hole"></span>TagBack</div>
+  <div class="seg" role="tablist" aria-label="Sections"><button data-act="role" data-v="home" id="r-home">Home</button>
     <button data-act="role" data-v="owner" id="r-owner">Owner</button>
     <button data-act="role" data-v="finder" id="r-finder">Finder</button>
     <button data-act="role" data-v="place" id="r-place">Community</button>
   </div>
 </header>
-<div id="app"></div>
-</div>
+<main id="app"></main>
+<footer>TagBack is a private QR lost-and-found with community help. Finders never see your phone number, email or real name.</footer></div>
 <div id="toast" class="toast" hidden></div>
 <script>
 "use strict";
 var KEY="tagback-v1";
 var S={owner:null,rooms:[],notes:[],blocked:[],g:{}};
-var ui={role:"owner",tab:"requests",sel:null,fRoom:null,fMode:"landing",err:"",qrUrl:"",scanned:false,scanning:false};
+var ui={role:"home",tab:"requests",sel:null,fRoom:null,fMode:"landing",err:"",qrUrl:"",scanned:false,scanning:false};
 function load(){try{var v=localStorage.getItem(KEY);return v?JSON.parse(v):null}catch(e){return null}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function rid(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,function(b){return b.toString(16).padStart(2,"0")}).join("")}
@@ -93,12 +134,20 @@ var LIMIT_PRE=3, MAX_REQ=3, MAX_LEN=500;
 
 /* ---------- views ---------- */
 function render(){
-  $("r-owner").className=ui.role==="owner"?"on":"";$("r-finder").className=ui.role==="finder"?"on":"";$("r-place").className=ui.role==="place"?"on":"";
-  $("app").innerHTML=ui.role==="owner"?ownerView():ui.role==="place"?placeAdminView():finderView();
+  $("r-home").className=ui.role==="home"?"on":"";$("r-owner").className=ui.role==="owner"?"on":"";$("r-finder").className=ui.role==="finder"?"on":"";$("r-place").className=ui.role==="place"?"on":"";
+  $("app").innerHTML=ui.role==="home"?homeView():ui.role==="owner"?ownerView():ui.role==="place"?placeAdminView():finderView();
   if(ui.role==="owner"&&S.owner&&ui.tab==="qr")drawQR();
   if(ui.role==="place"&&ui.aTab==="board")drawPlaceQR();
+  if(ui.role==="home")drawHeroQR();
   var c=document.querySelector(".chat");if(c)c.scrollTop=c.scrollHeight;
 }
+function homeView(){
+ return '<section class="hero"><div><h1>Lost it? One scan brings it home.</h1><p class="lead">TagBack puts a private QR sticker on your belongings. Whoever finds them can reach you without ever seeing your phone number or email.</p><div class="row"><button class="b big" data-act="role" data-v="owner">Get my QR tag</button><button class="b alt big" data-act="role" data-v="finder">I found something</button></div></div>'+
+ '<div class="tagcard" aria-hidden="true"><div class="qrbox" id="heroqr"></div><b>Scan to open TagBack</b></div></section>'+
+ '<h2 class="sec">How it works</h2><div class="steps"><div><span class="n">1</span><h3>Stick it on</h3><p class="mute">Create an account, print your QR and put it on a bag, laptop or wallet.</p></div><div><span class="n">2</span><h3>Finder scans</h3><p class="mute">No app or account. They see your public note and a phrase that proves the sticker is real.</p></div><div><span class="n">3</span><h3>Chat privately</h3><p class="mute">You accept, reply and mark the item recovered. Block anyone at any time.</p></div></div>'+
+ '<div class="card split2"><div><h2>Private by design</h2><ul class="facts"><li><strong>Contact details stay hidden.</strong> Finders see only the name and note you choose.</li><li><strong>You approve first.</strong> Until you accept, a finder can send just 3 messages.</li><li><strong>Easy to switch off.</strong> Deactivate or regenerate a code if a sticker goes missing.</li></ul></div><div><h2>Community help at public places</h2><p>Scan a place QR, such as an auto stand, to message vehicle owners, drivers or helpers. AI only suggests a category; you confirm it.</p><p>Emergency messages use fixed rules, never wait on AI, and offer one-tap Call 112.</p><button class="b alt" data-act="role" data-v="place">Open community</button></div></div>';
+}
+function drawHeroQR(){var el=$("heroqr");if(!el)return;try{var q=qrcode(0,"M");q.addData(location.href.split("#")[0]);q.make();el.innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true})}catch(e){el.style.display="none"}}
 function ownerView(){
   if(!S.owner)return '<div class="card"><h1>Get your permanent QR tag</h1><p class="mute">Create an account to get one QR code you can stick on every belonging. Finders never see your phone or email.</p>'+
    '<label for="o-name">Your name</label><input id="o-name" maxlength="40" placeholder="e.g. Aarav S.">'+
@@ -187,28 +236,28 @@ function kapi(m,p,b){return api(m,p,b,{"x-key":PK||""})}
 function pid(){return ui.place?ui.place.id:"station"}
 function placeUrl(){return location.href.split("#")[0]+"#place-station"}
 function tags(c,u){return '<span class="pill'+(u==="emergency"||u==="high"?" pending":"")+'">'+esc(u)+'</span> <span class="pill">'+esc(c)+'</span>'}
-function call112(){return '<a class="call" href="tel:112">📞 Call 112</a>'}
+function call112(){return '<a class="call" href="tel:112">Call 112</a>'}
 function catBtns(act,cls){return CATS.map(function(c){return '<button class="b '+cls+'" data-act="'+act+'" data-v="'+c+'">'+c+'</button>'}).join("")}
 function placeView(){
- var h='<h1>📍 '+esc(ui.place.name)+'</h1><p class="mute">You are '+NICK+'. No phone numbers or names are shared.</p>';
+ var h='<h1>'+esc(ui.place.name)+'</h1><p class="mute">You are '+NICK+'. No phone numbers or names are shared.</p>';
  h+='<div class="tabs"><button data-act="pset" data-v="msg" class="'+(ui.pTab!=="rides"?"on":"")+'">Message</button><button data-act="pset" data-v="rides" class="'+(ui.pTab==="rides"?"on":"")+'">Ride board</button></div>';
  return h+(ui.pTab==="rides"?ridesPane():msgPane())+'<p><button class="b alt" data-act="rescan">Scan a different QR</button></p>';
 }
 function msgPane(){
  var st=ui.pStep||"compose",p=ui.ping;
- if(st==="sent"&&p)return '<div class="card"><h2>✓ Message sent</h2><p class="mute">Sent to the '+esc(p.to.toLowerCase())+'. No names or numbers were shared.</p>'+tags(p.cat,p.urg)+(p.cat==="Emergency"?'<p><strong>Call 112 now.</strong> '+(p.alerted?"Responders have been emailed.":"Your message is in the responders’ inbox, but no alert channel is set up.")+'</p>':"")+(p.replies.length?p.replies.map(function(r){return '<div class="m">'+esc(r)+'</div>'}).join(""):'<p class="mute">Waiting for a reply…</p>')+(p.status==="closed"?'<p class="mute">Chat closed: issue solved.</p>':"")+'<p><button class="b" data-act="pstep" data-v="compose">Send another</button></p></div>'+call112();
- if(st==="suggest"&&ui.sug)return '<div class="card"><h1>Looks like “'+esc(ui.sug.category)+'”. Is that right?</h1><p class="mute">'+(ui.sug.mode==="ai"?"AI only suggests. You decide.":"Quick guess (AI unavailable). You decide.")+'</p>'+(ui.sug.followup?'<p>🤔 '+esc(ui.sug.followup)+'</p>':"")+'<button class="b" data-act="psend" data-v="'+esc(ui.sug.category)+'">Yes, send</button><p class="mute" style="margin-top:12px">Or change it:</p><div class="row">'+catBtns("psend","alt")+'</div></div>'+call112();
+ if(st==="sent"&&p)return '<div class="card"><h2>Message sent</h2><p class="mute">Sent to the '+esc(p.to.toLowerCase())+'. No names or numbers were shared.</p>'+tags(p.cat,p.urg)+(p.cat==="Emergency"?'<p><strong>Call 112 now.</strong> '+(p.alerted?"Responders have been emailed.":"Your message is in the responders’ inbox, but no alert channel is set up.")+'</p>':"")+(p.replies.length?p.replies.map(function(r){return '<div class="m">'+esc(r)+'</div>'}).join(""):'<p class="mute">Waiting for a reply…</p>')+(p.status==="closed"?'<p class="mute">Chat closed: issue solved.</p>':"")+'<p><button class="b" data-act="pstep" data-v="compose">Send another</button></p></div>'+call112();
+ if(st==="suggest"&&ui.sug)return '<div class="card"><h1>Looks like “'+esc(ui.sug.category)+'”. Is that right?</h1><p class="mute">'+(ui.sug.mode==="ai"?"AI only suggests. You decide.":"Quick guess (AI unavailable). You decide.")+'</p>'+(ui.sug.followup?'<p>'+esc(ui.sug.followup)+'</p>':"")+'<button class="b" data-act="psend" data-v="'+esc(ui.sug.category)+'">Yes, send</button><p class="mute" style="margin-top:12px">Or change it:</p><div class="row">'+catBtns("psend","alt")+'</div></div>'+call112();
  if(st==="pick")return '<div class="card"><h1>Pick a category</h1><p class="mute">'+(ui.sug&&ui.sug.mode==="off"?"AI is off":"AI is slow or down")+': choose manually.</p><div class="row">'+catBtns("psend","")+'</div></div>'+call112();
- return '<button class="b emg" data-act="psend" data-v="Emergency">🚨 EMERGENCY</button>'+call112()+'<div class="card"><textarea id="p-text" maxlength="300" placeholder="What’s happening? e.g. your car is blocking my gate"></textarea><div class="err">'+esc(ui.err)+'</div><p style="margin-top:10px"><button class="b" data-act="psuggest">'+(ui.busy?"Thinking…":"Suggest category")+'</button></p><p class="mute">Or tap a category directly:</p><div class="row">'+catBtns("psend","alt")+'</div></div><div class="card mute">Found something with a TagBack sticker? <button class="b alt" data-act="rescan">Scan that tag instead</button></div>';
+ return '<button class="b emg" data-act="psend" data-v="Emergency">Emergency: I need help now</button>'+call112()+'<div class="card"><textarea id="p-text" maxlength="300" placeholder="What’s happening? e.g. your car is blocking my gate"></textarea><div class="err">'+esc(ui.err)+'</div><p style="margin-top:10px"><button class="b" data-act="psuggest">'+(ui.busy?"Thinking…":"Suggest category")+'</button></p><p class="mute">Or tap a category directly:</p><div class="row">'+catBtns("psend","alt")+'</div></div><div class="card mute">Found something with a TagBack sticker? <button class="b alt" data-act="rescan">Scan that tag instead</button></div>';
 }
 function ridesPane(){
  return (ui.rides||[]).map(function(r){var sp=Math.max(r.joined.length+1,2);
- return '<div class="card"><h2>'+esc(r.from)+' → '+esc(r.to)+' · '+esc(r.time)+'</h2><p class="mute">Posted by '+esc(r.by)+'</p><p>Total ₹'+r.fare+'. <strong>₹'+Math.round(r.fare/sp)+' each</strong> for '+sp+' riders (mock, no payments).</p><p>'+(r.driver?'🚗 '+esc(r.driver)+' is <strong>available</strong>':'<span class="mute">No driver yet</span>')+(r.joined.length?'<br>👥 Joined: '+r.joined.map(esc).join(", "):"")+'</p><div class="row"><button class="b alt" data-act="rdrv" data-v="'+r.id+'">🚗 I’m available</button><button class="b" data-act="rjoin" data-v="'+r.id+'">Request to join</button></div></div>'}).join("")+
+ return '<div class="card"><h2>'+esc(r.from)+' → '+esc(r.to)+' · '+esc(r.time)+'</h2><p class="mute">Posted by '+esc(r.by)+'</p><p>Total ₹'+r.fare+'. <strong>₹'+Math.round(r.fare/sp)+' each</strong> for '+sp+' riders (mock, no payments).</p><p>'+(r.driver?esc(r.driver)+' is <strong>available</strong>':'<span class="mute">No driver yet</span>')+(r.joined.length?'<br>Joined: '+r.joined.map(esc).join(", "):"")+'</p><div class="row"><button class="b alt" data-act="rdrv" data-v="'+r.id+'">I’m available</button><button class="b" data-act="rjoin" data-v="'+r.id+'">Request to join</button></div></div>'}).join("")+
  '<div class="card"><h2>Post a trip ahead</h2><div class="row"><input id="rf" placeholder="From" style="flex:1"><input id="rt" placeholder="To" style="flex:1"></div><p style="margin-top:10px"><button class="b" data-act="rpost">Post trip</button></p><div class="err">'+esc(ui.err)+'</div></div>';
 }
 function pingCard(p){
  return '<div class="card">'+tags(p.cat,p.urg)+' <span class="mute">→ '+esc(p.to)+(p.rerouted?" (re-routed)":"")+' · confidence '+esc(p.conf)+'</span><p style="margin-top:8px">'+esc(p.polite)+'</p><details><summary class="mute">Show original</summary><p>'+esc(p.orig)+'</p></details>'+p.replies.map(function(r){return '<p class="mute">You: '+esc(r)+'</p>'}).join("")+
- '<div class="row">'+["On my way, 5 min","Moving it now","Sorry, not mine"].map(function(q){return '<button class="b alt" data-act="arep" data-v="'+p.id+'|'+q+'">'+q+'</button>'}).join("")+'<button class="b alt" data-act="aop" data-v="'+p.id+'|reroute">Not for me</button><button class="b ok" data-act="aop" data-v="'+p.id+'|close">Solved ✓</button><button class="b bad" data-act="aop" data-v="'+p.id+'|block">Block</button></div></div>';
+ '<div class="row">'+["On my way, 5 min","Moving it now","Sorry, not mine"].map(function(q){return '<button class="b alt" data-act="arep" data-v="'+p.id+'|'+q+'">'+q+'</button>'}).join("")+'<button class="b alt" data-act="aop" data-v="'+p.id+'|reroute">Not for me</button><button class="b ok" data-act="aop" data-v="'+p.id+'|close">Mark solved</button><button class="b bad" data-act="aop" data-v="'+p.id+'|block">Block</button></div></div>';
 }
 function keyCard(){return '<div class="card"><h1>Community inbox</h1><p class="mute">For vehicle owners, drivers and helpers. Enter the responder key.</p><input id="k-in" placeholder="Responder key"><p style="margin-top:12px"><button class="b" data-act="pkey">Open</button></p><div class="err">'+(ui.badKey?"Wrong key.":"")+'</div></div>'}
 async function pollHelp(){
